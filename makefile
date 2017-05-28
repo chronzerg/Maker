@@ -1,3 +1,14 @@
+##       ##  ########  ##   ##   #######  ######
+####   ####  ##    ##  ##  ##    ##       ##   ##
+###########  ########  ######    #####    ######
+##  ###  ##  ##    ##  ##   ##   ##       ##   ##
+##       ##  ##    ##  ##    ##  #######  ##    ##
+
+##################################################
+# https://github.com/chronzerg/Maker
+
+
+
 # GLOBAL CONFIG
 ###############
 
@@ -16,7 +27,7 @@ cxx=g++
 # $cxxflags      : used in every invocation of the compiler.
 # $cxxflags_comp : used only during compilation
 # $cxxflags_link : used only during linking.
-cxxflags=-Wall -std=c++11
+cxxflags=
 cxxflags_comp=
 cxxflags_link=
 
@@ -184,7 +195,7 @@ $$$(error No file rule defined for type $1)\
 # 3 - Dependencies
 # 4 - Compile Flags
 # 5 - Link/Package Flags
-define printMeta
+define formatMetadata
 Type          : $2
 Dependencies  : $3
 Compile Flags : $4
@@ -207,7 +218,7 @@ define moduleTempl
 $(call debug,Defining module for $1)
 $(call checkPath,$1)
 
-$(call debug,$(call printMeta,$1,$2,$3,$4,$5))
+$(call debug,$(call formatMetadata,$1,$2,$3,$4,$5))
 $(call debug,)
 
 $(call name,$1)Path=$1
@@ -284,22 +295,6 @@ $(call debug,====================)
 $(foreach f,$(shell find . -iname *.mk),$(eval include $f))
 
 
-# DYNAMIC RULES
-###############
-
-ifndef targets
-$(error No module definitions found)
-else
-$(call debug,Targets: $(targets))
-$(call debug,)
-
-$(foreach t,$(targets),$(eval $(call rules,$t)))
-
-$(call debug,Starting build)
-$(call debug,==============)
-endif
-
-
 
 # STATIC RULES
 ##############
@@ -314,3 +309,20 @@ $(buildDir)/%.obj: %.cpp
 clean:
 	$(call log,Cleaning)
 	@rm -rf $(buildDir)
+
+
+
+# DYNAMIC RULES
+###############
+
+ifndef targets
+$(error No module definitions found)
+else
+$(call debug,Targets: $(targets))
+$(call debug,)
+
+$(foreach t,$(targets),$(eval $(call rules,$t)))
+
+$(call debug,Starting build)
+$(call debug,==============)
+endif
