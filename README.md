@@ -1,7 +1,5 @@
 Maker
 =====
-
-## What is it?
 Maker is a simple C++ build system implemented in GNU Make. It was created to simplify makefile configuration.
 
 ## How to install?
