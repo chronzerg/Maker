@@ -14,11 +14,9 @@ Maker scans for any ".mk" files in the same directory and reads them as configur
 # Define an executable module.
 $(call exec, source/executable_code,   \
                                        \
-    # Dependencies                     \
     source/static_lib_code             \
     source/other_module,               \
                                        \
-    # Compile Flags                    \
     $(call includes,                   \
         path/to/include                \
         other/include/path             \
@@ -26,7 +24,6 @@ $(call exec, source/executable_code,   \
     $(call define, THIS_MACRO, 1234)   \
     $(call define, THAT_MACRO, heyo),  \
                                        \
-    # Link Flags                       \
     $(call libraries,                  \
         ncurses,                       \
         pthread                        \
