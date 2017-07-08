@@ -6,76 +6,94 @@ Maker is a simple C++ build system implemented in GNU Make. It was created to si
 Simply copy the makefile from this repo in your project.
 
 ## How to configure?
-Maker scans for any ".mk" files in the same directory and reads them as configuration. Here is what a configuration file might look like:
+Maker looks for a 'config.mkr' file in the same directory and reads it as configuration. Here is what the configuration file might look like:
 
 ```Makefile
+# Project-wide compilation flags
+cxxflags = -Wall -std=c++11;
+
 # Define an executable module.
-$(call exec, source/executable_code,   \
-                                       \
-    source/static_lib_code             \
-    source/other_module,               \
-                                       \
-    $(call includes,                   \
-        path/to/include                \
-        other/include/path             \
-    )                                  \
-    $(call define, THIS_MACRO, 1234)   \
-    $(call define, THAT_MACRO, heyo),  \
-                                       \
-    $(call libraries,                  \
-        ncurses,                       \
-        pthread                        \
-    )                                  \
-)
+$(call exec, source/executable_code,
+
+    # Dependencies
+    source/static_lib_code
+    source/other_module,
+
+    # Module Compilation Flags
+    $(call includes,
+        path/to/include
+        other/include/path
+    )
+    $(call define, THIS_MACRO, 1234)
+    $(call define, THAT_MACRO, heyo),
+
+    # Module Linking Flags
+    $(call libraries,
+        ncurses,
+        pthread
+    )
+);
 
 # Define some static library modules
-$(call slib, source/static_lib_code,,-O3)
-$(call slib, source/other_module)
+$(call slib, source/static_lib_code,,-O3);
+$(call slib, source/other_module);
 ```
 
-### Defining Modules
-With Maker, targets are defined via module definitions. A module is a group of source files which are built together using the same compile flags, and linked or packaged into some kind of output file. Maker provides two types of module output file: executable or static library. To define a module, there is a function call for each output type:
+Configuration is done via global configuration and target definitions:
+ - Global configuration consists of several variables which are defined at the top of the Maker makefile. Their values can be changed in the Makefile or preferably redefined in the config.mkr file (as seen with the `cxxflags` variable in the example above). For more information on these variables, see the top of the Maker makefile where the variables are well documented.
+
+ - Target definitions are done via calls to Maker functions (as seen with the `$(call exec...)` and `$(call slib...)` statements in the example above). All targets are currently created as a result of module definition. What a module is and what the arguments to said functions mean is discussed in the following sections.
+
+### Module Targets
+With Maker, build targets are defined via module definitions. A module is a group of source files which are built together using the same compile flags, and linked or packaged into some kind of output file. Maker provides two types of module output files: executable or static library. To define a module, there is a function call for each output type:
 
 ```Makefile
 # Define an executable module
-$(call exec, source path, dependencies, compile flags, link flags)
+$(call exec, source path, dependencies, compile flags, link flags);
 
 # Define a static library module
-$(call slib, source path, dependencies, compile flags, package flags)
+$(call slib, source path, dependencies, compile flags, package flags);
 ```
 
-Modules are configured via global configuration and arguments passed into the module functions. The global configuration is located at the top of the makefile and is well documented with comments. The module function arguments are documented below the following sections.
+The module function arguments, as named above, have the following meanings:
+- _source path_: The path to the folder containing all the source files for this module. All '.cpp' and '.h' files in this folder and its subfolders will be included in this module. What extensions are searched for is configurable in the global configuration. Note: source paths cannot contain the '@' symbol. This is because this symbol is reserved for usage by the "run targets" (see next section).
 
-#### source path
-The path to the folder containing all the source files for this module. All '.cpp' and '.h' files in this folder and its subfolders will be included in this module. What extensions are searched for is configurable in the global configuration.
+- _dependencies_: The source paths of other module this module depends on. Executable modules can depend on any number of static library modules, causing their output files to be built (if necessary) and added to the input of the executable module's link stage. Currently, this argument isn't used by static library modules, but will be in future versions.
 
-#### dependencies
-The source paths of other module this module depends on. Executable modules can depend on any number of static library modules, causing their output files to be built (if necessary) and added to the input of the executable module's link stage.
+- _compile flags_: The flags to pass to the compiler when compiling a source file. As shown in the example, there are several functions provided for better semantics, but writing the flags yourself is acceptable.
 
-Currently, this argument isn't used by static library modules, but will be in future versions.
+    ```Makefile
+    # -Ipath/to/include -Iother/include/path
+    $(call includes,
+        path/to/include
+        other/include/path
+    );
 
-#### compile flags
-The flags to pass to the compiler when compiling a source file. As shown in the example, there are several functions provided for semantics.
+    # -DMY_NUMBER=10
+    $(call define, MY_NUMBER, 10);
+    ```
 
-```Makefile
-# -Ipath/to/include -Iother/include/path
-$(call includes,       \
-    path/to/include    \
-    other/include/path \
-)
+- _link/package flags_: The flags passed to the utility (g++ or ar) during the linking or packaging stage, for executable or static library modules respectively. Just as with the compile flags, functions are provided for better semantics, but writing the flags yourself is acceptable.
 
-# -DMY_NUMBER=10
-$(call define, MY_NUMBER, 10)
+    ```Makefile
+    # -lncurses -lpthread
+    $(call libraries,
+        ncurses,
+        pthread
+    );
+    ```
+
+To build a given module, Maker defines a target named after the module's source path. For instance, given the configuration at the start of this readme, one could invoke make as follows:
+
+```bash
+make source/executable_code
+make source/static_lib_code
+make source/other_module
 ```
 
-#### link/package flags
-The flags passed to the compiler during linking or packaging stage, for executable or static library modules respectively. As shown in the example, there are several functions provided for semantics.
+### Run Targets
+Whenever an executable module is defined, a run target for said module is also defined. When executed, this target runs the module's output executable, building it first if it's out of date. The target takes the form of `run@path/to/module`. For instance, given the configuration at the start of this readme, one could invoke make as follows:
 
-```Makefile
-# -lncurses -lpthread
-$(call libraries, \
-    ncurses,      \
-    pthread       \
-)
+```bash
+make run@source/executable_code
 ```
-
