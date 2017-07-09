@@ -279,22 +279,6 @@ moduleTypes=exec slib
 $(foreach v,$(moduleTypes),$(eval $v=$$(call module,$$1,$$0,$$2,$$3,$$4)))
 
 
-# Include Flags
-# 1 - List of paths
-includes=$(foreach v,$1,-I$v)
-
-
-# Macro
-# 1 - Macro name
-# 2 - Macro value
-define=-D$1=$2
-
-
-# System Library Flags
-# 1 - List of libraries
-libraries=$(foreach v,$1,-l$v)
-
-
 
 # LOAD METADATA
 ###############

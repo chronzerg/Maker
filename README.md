@@ -10,7 +10,7 @@ Maker looks for a 'config.mkr' file in the same directory and reads it as config
 
 ```Makefile
 # Project-wide compilation flags
-cxxflags = -Wall -std=c++11;
+cxxFlags = -Wall -std=c++11;
 
 # Define an executable module.
 $(call exec, source/executable_code,
@@ -19,28 +19,27 @@ $(call exec, source/executable_code,
     source/static_lib_code
     source/other_module,
 
+
     # Module Compilation Flags
-    $(call includes,
-        path/to/include
-        other/include/path
-    )
-    $(call define, THIS_MACRO, 1234)
-    $(call define, THAT_MACRO, heyo),
+    -I path/to/include
+    -I other/include/path
+
+    -D THIS_MACRO=1234
+    -D THAT_MACRO heyo,
+
 
     # Module Linking Flags
-    $(call libraries,
-        ncurses,
-        pthread
-    )
+    -l ncurses
+    -l pthread
 );
 
 # Define some static library modules
-$(call slib, source/static_lib_code,,-O3);
+$(call slib, source/static_lib_code,, -O3);
 $(call slib, source/other_module);
 ```
 
 Configuration is done via global configuration and target definitions:
- - Global configuration consists of several variables which are defined at the top of the Maker makefile. Their values can be changed in the Makefile or preferably redefined in the config.mkr file (as seen with the `cxxflags` variable in the example above). For more information on these variables, see the top of the Maker makefile where the variables are well documented.
+ - Global configuration consists of several variables which are defined at the top of the Maker makefile. Their values can be changed in the Makefile or preferably redefined in the config.mkr file (as seen with the `cxxFlags` variable in the example above). For more information on these variables, see the top of the Maker makefile where the variables are well documented.
 
  - Target definitions are done via calls to Maker functions (as seen with the `$(call exec...)` and `$(call slib...)` statements in the example above). All targets are currently created as a result of module definition. What a module is and what the arguments to said functions mean is discussed in the following sections.
 
@@ -60,28 +59,9 @@ The module function arguments, as named above, have the following meanings:
 
 - _dependencies_: The source paths of other module this module depends on. Executable modules can depend on any number of static library modules, causing their output files to be built (if necessary) and added to the input of the executable module's link stage. Currently, this argument isn't used by static library modules, but will be in future versions.
 
-- _compile flags_: The flags to pass to the compiler when compiling a source file. As shown in the example, there are several functions provided for better semantics, but writing the flags yourself is acceptable.
+- _compile flags_: The flags to pass to the compiler when compiling a source file.
 
-    ```Makefile
-    # -Ipath/to/include -Iother/include/path
-    $(call includes,
-        path/to/include
-        other/include/path
-    );
-
-    # -DMY_NUMBER=10
-    $(call define, MY_NUMBER, 10);
-    ```
-
-- _link/package flags_: The flags passed to the utility (g++ or ar) during the linking or packaging stage, for executable or static library modules respectively. Just as with the compile flags, functions are provided for better semantics, but writing the flags yourself is acceptable.
-
-    ```Makefile
-    # -lncurses -lpthread
-    $(call libraries,
-        ncurses,
-        pthread
-    );
-    ```
+- _link/package flags_: The flags passed to the utility (g++ or ar) during the linking or packaging stage, for executable or static library modules respectively.
 
 To build a given module, Maker defines a target named after the module's source path. For instance, given the configuration at the start of this readme, one could invoke make as follows:
 
