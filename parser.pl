@@ -10,7 +10,7 @@ while(<STDIN>) {
     # preceeded by a semi
     # colon
     # TODO: Count the number
-    # of replace lines and
+    # of replaced lines and
     # add blanks afterwards
     # to preserve line numbers
     # of other commands.
@@ -21,4 +21,3 @@ while(<STDIN>) {
 
     print;
 }
-
