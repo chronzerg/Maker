@@ -53,11 +53,9 @@ execExt=out
 slibExt=lib
 
 
-# Verbosity level
-# 0: Mute
-# 1: Normal
-# 2: Debug
-verbosity=2
+# Set this variable to a non-empty string to turn off
+# verbose output.
+verbose=
 
 
 
@@ -74,6 +72,13 @@ $(foreach v,$(requiredVars),$(if $($v),,$(error $v is required but not defined))
 .SUFFIXES:
 
 
+# If "verbose" is empty, then don't print the
+# command being invoked by make.
+ifeq ($(verbose),)
+.SILENT:
+endif
+
+
 
 # RULE MACROS
 #############
@@ -88,8 +93,8 @@ define slibRuleTempl
 $1: cxxFlagsCompExtra = $3
 $1: $2
 	@echo "Packaging $$@"
-	@mkdir -p $$(dir $$@)
-	@ar $$(arFlags) $4 $$@ $$^
+	mkdir -p $$(dir $$@)
+	ar $$(arFlags) $4 $$@ $$^
 endef
 
 
@@ -103,8 +108,8 @@ define execRuleTempl
 $1: cxxFlagsCompExtra = $3
 $1: $2
 	@echo "Linking $$@"
-	@mkdir -p $$(dir $$@)
-	@$$(cxx) $$(cxxFlags) $$(cxxFlagsLink) $4 $$^ -o $$@
+	mkdir -p $$(dir $$@)
+	$$(cxx) $$(cxxFlags) $$(cxxFlagsLink) $4 $$^ -o $$@
 endef
 
 
@@ -127,7 +132,7 @@ define runRuleTempl
 .PHONY: $1
 $1: $2 $3
 	@echo "Running $$<"
-	@$$<
+	$$<
 endef
 
 
@@ -135,19 +140,14 @@ endef
 # LOGGING MACROS
 ################
 
-# Greater Than Operator
-# Returns "yes" if $1 > $2
-gt=$(shell test $1 -gt $2 && echo yes)
-
-
 # Log - Normal
 # 1 - Message
-log=$(if $(call gt,$(verbosity),0),$(info $1))
+log=$(info $1)
 
 
 # Log - Debug
 # 1 - Message
-debug=$(if $(call gt,$(verbosity),1),$(info $1))
+debug=$(if $(verbose),$(info $1))
 
 
 
@@ -252,10 +252,6 @@ endef
 depFiles=$(foreach v,$1,$(call file,$v,$($(v)Type)))
 
 
-# TODO: Make all rule functions take the same arguments (even if some aren't used) so
-# we can simply iterate over all the rules while eval'ing them, for a particular module
-# type.
-
 # Define Module Rules
 # 1 - Input Path
 rules=$(eval $(call rulesTempl,$1,$($(1)Type),$($(1)Deps),$($(1)CFlags),$($(1)LFlags),$($(1)RunDeps)))
@@ -292,7 +288,7 @@ $(foreach v,$(moduleTypes),$(eval $v=$$(call module,$$1,$$0,$$2,$$3,$$4)))
 # Parse Config File
 # 1 - Config file path
 parseConfig=$(call debug,Parsing $1)$(call debug,)\
-            $(eval tempFile=$(shell mktemp))      \
+            $(eval tempFile=$(shell mktemp))\
             $(shell perl -pe '$(parserCode)' < $1 > $(tempFile))\
             $(eval include $(tempFile))
 define parserCode
@@ -312,16 +308,18 @@ $(foreach f,$(configFiles),$(call parseConfig,$f))
 # STATIC RULES
 ##############
 
+.PHONY: all clean
+
 all: $(targets)
 
 $(buildDir)/%.obj: %.cpp
 	$(call log,Compiling $<)
-	@mkdir -p $(dir $@)
-	@$(cxx) -c $(cxxFlags) $(cxxFlagsComp) $(cxxFlagsCompExtra) $< -o $@
+	mkdir -p $(dir $@)
+	$(cxx) -c $(cxxFlags) $(cxxFlagsComp) $(cxxFlagsCompExtra) $< -o $@
 
 clean:
 	$(call log,Cleaning)
-	@rm -rf $(buildDir)
+	rm -rf $(buildDir)
 
 
 
