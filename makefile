@@ -5,7 +5,7 @@
 ##       ##  ##    ##  ##    ##  #######  ##    ##
 
 ##################################################
-# https://github.com/chronzerg/Maker
+# https://github.com/janderland/Maker
 # v1.0.0
 
 
