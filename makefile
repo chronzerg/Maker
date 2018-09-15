@@ -69,6 +69,11 @@ requiredVars=buildDir cxx execExt slibExt
 $(foreach v,$(requiredVars),$(if $($v),,$(error $v is required but not defined)))
 
 
+# Empty the .SUFFIXES variable to turn off
+# almost all the builtin rules.
+.SUFFIXES:
+
+
 
 # RULE MACROS
 #############
