@@ -41,9 +41,8 @@ arFlags=rcs
 
 
 # File extensions for the input files
-# TODO: Get header dependencies working...
 sourceExt=cpp
-headerExt=h
+headerExt=hpp
 
 
 # File extensions for the generated executables and
@@ -267,6 +266,15 @@ endef
 
 
 
+# HEADER DEP MACROS
+###################
+
+headerDepFlags=-MMD -MF $(basename $@).dep
+
+headerDepFiles=$(shell if [ -d $(buildDir) ]; then find $(buildDir) -iname *.dep; fi)
+
+
+
 # PUBLIC MACROS
 ###############
 
@@ -314,7 +322,7 @@ all: $(targets)
 $(buildDir)/%.obj: %.cpp
 	$(call log,Compiling $<)
 	mkdir -p $(dir $@)
-	$(cxx) -c $(cxxFlags) $(cxxFlagsComp) $(cxxFlagsCompExtra) $< -o $@
+	$(cxx) -c $(headerDepFlags) $(cxxFlags) $(cxxFlagsComp) $(cxxFlagsCompExtra) $< -o $@
 
 clean:
 	$(call log,Cleaning)
@@ -332,6 +340,8 @@ $(call debug,Targets: $(targets))
 $(call debug,)
 
 $(foreach t,$(targets),$(eval $(call rules,$t)))
+
+include $(headerDepFiles)
 
 $(call debug,Compilation)
 $(call debug,===========)
