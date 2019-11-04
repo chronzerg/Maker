@@ -16,8 +16,12 @@ var save *bool
 
 func TestMain(m *testing.M) {
 	log.SetFlags(0)
+
+	save = flag.Bool("save", false, "overwrites the test expectations")
 	flag.Parse()
+
 	buildCLI()
+
 	os.Exit(m.Run())
 }
 
@@ -29,7 +33,7 @@ func TestFramework(t *testing.T) {
 
 	fs := Files(mock.dir)
 	fs.file("config.mkr", `
-$(call exec, mod,
+$(call exec, dir,
 	# Dependencies
 	,
 	# Compile Flags
@@ -37,9 +41,13 @@ $(call exec, mod,
 	# Linking Flags
 );`)
 
-	fs.dir("mod").file("file.cpp", "")
+	fs.dir("dir").file("file.cpp", "")
 
 	mock.Run(t)
 
-	log.Println(args.args)
+	if *save {
+		saveArgs("test", args.args)
+	} else {
+		checkArgs(t, "test", args.args)
+	}
 }
