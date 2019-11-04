@@ -20,10 +20,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestFramework(t *testing.T) {
-	argListener := newArgListener()
-	defer argListener.close()
+	args := newArgListener()
+	defer args.close()
 
-	maker := newMock(argListener.port, nil, map[string]string{})
+	mock := newMock(args.port, nil, nil)
 
 	const cfg = `
 $(call exec, mod,
@@ -34,13 +34,13 @@ $(call exec, mod,
 	# Linking Flags
 );`
 
-	cfgPath := filepath.Join(maker.dir, "config.mkr")
+	cfgPath := filepath.Join(mock.dir, "config.mkr")
 	err := ioutil.WriteFile(cfgPath, []byte(cfg), 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	modPath := filepath.Join(maker.dir, "mod")
+	modPath := filepath.Join(mock.dir, "mod")
 	err = os.MkdirAll(modPath, os.ModePerm)
 	if err != nil {
 		panic(err)
@@ -52,7 +52,7 @@ $(call exec, mod,
 		panic(err)
 	}
 
-	maker.Run(t)
+	mock.Run(t)
 
-	log.Println(argListener.args)
+	log.Println(args.args)
 }
