@@ -6,15 +6,17 @@ package tests
 // methods are reserved for when test invariants are violated.
 
 import (
-	"io/ioutil"
+	"flag"
 	"log"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
+var save *bool
+
 func TestMain(m *testing.M) {
 	log.SetFlags(0)
+	flag.Parse()
 	buildCLI()
 	os.Exit(m.Run())
 }
@@ -25,32 +27,17 @@ func TestFramework(t *testing.T) {
 
 	mock := newMock(args.port, nil, nil)
 
-	const cfg = `
+	fs := Files(mock.dir)
+	fs.file("config.mkr", `
 $(call exec, mod,
 	# Dependencies
 	,
 	# Compile Flags
 	,
 	# Linking Flags
-);`
+);`)
 
-	cfgPath := filepath.Join(mock.dir, "config.mkr")
-	err := ioutil.WriteFile(cfgPath, []byte(cfg), 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	modPath := filepath.Join(mock.dir, "mod")
-	err = os.MkdirAll(modPath, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	srcPath := filepath.Join(modPath, "file.cpp")
-	err = ioutil.WriteFile(srcPath, nil, 0644)
-	if err != nil {
-		panic(err)
-	}
+	fs.dir("mod").file("file.cpp", "")
 
 	mock.Run(t)
 
