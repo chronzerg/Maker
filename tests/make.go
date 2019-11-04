@@ -5,33 +5,65 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-type MakeExecution struct {
-	mocks    []string
-	dir      string
-	cliExec  string
-	makefile string
-	argPort  int
+const makefile = "../makefile"
+
+var mocks = []string{"cxx", "ar"}
+
+type MakeMock struct {
+	command *exec.Cmd
+	dir     string
 }
 
-func (m *MakeExecution) Run(t *testing.T) {
-	cmd := exec.Command("make", "-f", m.makefile)
-	cmd.Env = m.env()
-	cmd.Dir = m.dir
-	log.Println(cmd)
+func newMock(argPort int, targets []string, opts map[string]string) *MakeMock {
+	makefile, err := filepath.Abs(makefile)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to get makefile path"))
+	}
+	cmd := exec.Command("make", append([]string{"-f", makefile}, targets...)...)
 
-	stdoutPipe, err := cmd.StdoutPipe()
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(errors.Wrap(err, "failed to create temp dir"))
+	}
+	cmd.Dir = dir
+
+	cliExec, err := filepath.Abs(cliExec)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to get CLI path"))
+	}
+	env := make([]string, len(mocks))
+	for i, mock := range mocks {
+		env[i] = fmt.Sprintf("%s=%s %d %s", mock, cliExec, argPort, mock)
+	}
+	for opt, val := range opts {
+		env = append(env, fmt.Sprintf("%s=%s", opt, val))
+	}
+	cmd.Env = env
+
+	return &MakeMock{
+		command: cmd,
+		dir:     dir,
+	}
+}
+
+func (m *MakeMock) Run(t *testing.T) {
+	log.Println(m.command)
+
+	stdoutPipe, err := m.command.StdoutPipe()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to open stdout pipe"))
 	}
 
-	stderrPipe, err := cmd.StderrPipe()
+	stderrPipe, err := m.command.StderrPipe()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to open stderr pipe"))
 	}
@@ -69,24 +101,15 @@ func (m *MakeExecution) Run(t *testing.T) {
 		}
 	}()
 
-	err = cmd.Start()
+	err = m.command.Start()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to run make"))
 	}
-	err = cmd.Wait()
+	err = m.command.Wait()
 	<-loggingDone
 	if err != nil {
 		t.Fatal(errors.Wrap(err, "make returned an error"))
 	}
-}
-
-func (m *MakeExecution) env() []string {
-	env := make([]string, len(m.mocks))
-	for i, mock := range m.mocks {
-		env[i] = fmt.Sprintf(`%s="%s %s %d"`,
-			mock, m.cliExec, mock, m.argPort)
-	}
-	return env
 }
 
 func doRead(inReader io.Reader, outCh chan<- string) {

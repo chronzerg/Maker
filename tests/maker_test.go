@@ -6,57 +6,53 @@ package tests
 // methods are reserved for when test invariants are violated.
 
 import (
-	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 )
 
-const cliExec = "cli/cli.run"
-const makefile = "../makefile"
-
 func TestMain(m *testing.M) {
 	log.SetFlags(0)
-	err := exec.Command("go", "build", "-o", cliExec, "cli/cli.go").Run()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to build CLI tool"))
-	}
+	buildCLI()
 	os.Exit(m.Run())
 }
 
-func TestMaker(t *testing.T) {
+func TestFramework(t *testing.T) {
 	argListener := newArgListener()
-	//defer argListener.close()
+	defer argListener.close()
 
-	e := MakeExecution{
-		mocks:    []string{"cxx"},
-		dir:      tempDir(),
-		cliExec:  absPath(cliExec),
-		makefile: absPath(makefile),
-		argPort:  argListener.port,
-	}
+	maker := newMock(argListener.port, nil, map[string]string{})
 
-	e.Run(t)
+	const cfg = `
+$(call exec, mod,
+	# Dependencies
+	,
+	# Compile Flags
+	,
+	# Linking Flags
+);`
 
-	fmt.Println(argListener.args)
-}
-
-func absPath(path string) string {
-	abs, err := filepath.Abs(path)
+	cfgPath := filepath.Join(maker.dir, "config.mkr")
+	err := ioutil.WriteFile(cfgPath, []byte(cfg), 0644)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get absolute path"))
+		panic(err)
 	}
-	return abs
-}
 
-func tempDir() string {
-	dir, err := ioutil.TempDir("", "")
+	modPath := filepath.Join(maker.dir, "mod")
+	err = os.MkdirAll(modPath, os.ModePerm)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to create temp dir"))
+		panic(err)
 	}
-	return dir
+
+	srcPath := filepath.Join(modPath, "file.cpp")
+	err = ioutil.WriteFile(srcPath, nil, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	maker.Run(t)
+
+	log.Println(argListener.args)
 }
