@@ -1,17 +1,26 @@
 package tests
 
+// Tests panic with any inter-process problems. For instance,
+// if RPC or forking fails. These actions facilitate the tests
+// but are not the test invariants themselves. The testing.T
+// methods are reserved for when test invariants are violated.
+
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
-	"strconv"
+	"path/filepath"
 	"testing"
 )
 
 const cliExec = "cli/cli.run"
+const makefile = "../makefile"
 
 func TestMain(m *testing.M) {
+	log.SetFlags(0)
 	err := exec.Command("go", "build", "-o", cliExec, "cli/cli.go").Run()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to build CLI tool"))
@@ -20,19 +29,34 @@ func TestMain(m *testing.M) {
 }
 
 func TestMaker(t *testing.T) {
-	a, err := newArgListener()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to construct ArgListener"))
+	argListener := newArgListener()
+	//defer argListener.close()
+
+	e := MakeExecution{
+		mocks:    []string{"cxx"},
+		dir:      tempDir(),
+		cliExec:  absPath(cliExec),
+		makefile: absPath(makefile),
+		argPort:  argListener.port,
 	}
-	defer func() {
-		err := a.close()
-		if err != nil {
-			panic(errors.Wrap(err, "failed to close ArgListener"))
-		}
-	}()
-	err = exec.Command(cliExec, strconv.Itoa(a.Port), "hello").Run()
+
+	e.Run(t)
+
+	fmt.Println(argListener.args)
+}
+
+func absPath(path string) string {
+	abs, err := filepath.Abs(path)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to run CLI tool"))
+		panic(errors.Wrap(err, "failed to get absolute path"))
 	}
-	fmt.Println(a.get())
+	return abs
+}
+
+func tempDir() string {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(errors.Wrap(err, "failed to create temp dir"))
+	}
+	return dir
 }

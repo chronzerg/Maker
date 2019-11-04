@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/pkg/errors"
 	"net"
 	"net/rpc"
 )
@@ -8,38 +9,54 @@ import (
 // Listens for args sent from the CLI client via RPC.
 type ArgListener struct {
 	listener net.Listener
-	argsCh   chan []string
 	server   *rpc.Server
-	Port     int
+	port     int
+
+	argsCh chan Args
+	args   map[string][]string
 }
 
-func newArgListener() (*ArgListener, error) {
+type Args struct {
+	Name string
+	Args []string
+}
+
+func newArgListener() *ArgListener {
+	const errMsg = "failed to construct ArgListener"
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
-		return nil, err
+		panic(errors.Wrap(err, errMsg))
 	}
 	a := &ArgListener{
 		listener: listener,
-		argsCh:   make(chan []string, 1),
 		server:   rpc.NewServer(),
-		Port:     listener.Addr().(*net.TCPAddr).Port,
+		port:     listener.Addr().(*net.TCPAddr).Port,
+		argsCh:   make(chan Args),
+		args:     make(map[string][]string),
 	}
 	if err := a.server.RegisterName("Args", a); err != nil {
-		return nil, err
+		panic(errors.Wrap(err, errMsg))
 	}
 	go a.server.Accept(listener)
-	return a, nil
+	go a.doPut()
+	return a
 }
 
-func (a *ArgListener) Put(args []string, _ *struct{}) error {
+func (a *ArgListener) doPut() {
+	for {
+		arg := <-a.argsCh
+		a.args[arg.Name] = arg.Args
+	}
+}
+
+func (a *ArgListener) Put(args Args, _ *struct{}) error {
 	a.argsCh <- args
 	return nil
 }
 
-func (a *ArgListener) get() []string {
-	return <-a.argsCh
-}
-
-func (a *ArgListener) close() error {
-	return a.listener.Close()
+func (a *ArgListener) close() {
+	err := a.listener.Close()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to close ArgListener"))
+	}
 }
