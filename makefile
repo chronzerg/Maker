@@ -39,16 +39,16 @@ cxxFlagsComp ?=
 cxxFlagsLink ?=
 
 
-# TODO - Document.
+# Path to the ar utility.
 ar ?= ar
-
-
-# TODO - Document.
-rm ?=/bin/rm
 
 
 # Flags passed to the ar utility.
 arFlags ?= rcs
+
+
+# Path to the rm utility.
+rm ?=/bin/rm
 
 
 # File extensions for the input files
@@ -69,6 +69,10 @@ verbose ?=
 
 # GLOBAL PROCESSING
 ###################
+
+# Let included makefiles know this is Maker.
+isMaker=true
+
 
 # Ensure all required global variables are defined.
 requiredVars=buildDir cxx execExt slibExt
@@ -134,11 +138,10 @@ endef
 # Define Run Rule
 # 1 - Rule Name
 # 2 - Executable
-# 3 - Depedencies
-runRule=$(eval $(call runRuleTempl,$1,$2,$3))
+runRule=$(eval $(call runRuleTempl,$1,$2))
 define runRuleTempl
 .PHONY: $1
-$1: $2 $3
+$1: $2
 	@echo "Running $$<"
 	$$<
 endef
@@ -236,8 +239,7 @@ endef
 # 3 - Dependencies
 # 4 - Compile Flags
 # 5 - Link/Package Flags
-# 6 - Run Dependencies
-module=$(eval $(call moduleTempl,$(strip $1),$(strip $2),$(strip $3),$(strip $4),$(strip $5),$(strip $6)))
+module=$(eval $(call moduleTempl,$(strip $1),$(strip $2),$(strip $3),$(strip $4),$(strip $5)))
 define moduleTempl
 $(call debug,Defining module for $1)
 $(call checkPathExists,$1)
@@ -250,7 +252,6 @@ $(1)Type=$2
 $(1)Deps=$3
 $(1)CFlags=$4
 $(1)LFlags=$5
-$(1)RunDeps=$6
 targets+=$1
 endef
 
@@ -262,7 +263,7 @@ depFiles=$(foreach v,$1,$(call file,$v,$($(v)Type)))
 
 # Define Module Rules
 # 1 - Input Path
-rules=$(eval $(call rulesTempl,$1,$($(1)Type),$($(1)Deps),$($(1)CFlags),$($(1)LFlags),$($(1)RunDeps)))
+rules=$(eval $(call rulesTempl,$1,$($(1)Type),$($(1)Deps),$($(1)CFlags),$($(1)LFlags)))
 define rulesTempl
 # Define the file rule
 $(call $(call fileRuleName,$2),$(call file,$1,$2),$(call objects,$1) $(call depFiles,$3),$4,$5)
@@ -271,7 +272,7 @@ $(call $(call fileRuleName,$2),$(call file,$1,$2),$(call objects,$1) $(call depF
 $(call aliasRule,$1,$(call file,$1,$2))
 
 # Define the run rule (only for executables)
-$(if $(filter exec,$2),$(call runRule,$(call rname,$1),$(call file,$1,$2),$6))
+$(if $(filter exec,$2),$(call runRule,$(call rname,$1),$(call file,$1,$2)))
 endef
 
 
