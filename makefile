@@ -63,7 +63,7 @@ slibExt ?= lib
 
 # Set this variable to a non-empty string to turn off
 # verbose output.
-verbose ?=
+verbose ?= true
 
 
 
@@ -296,30 +296,43 @@ headerDepFiles=$(shell if [ -d $(buildDir) ]; then find $(buildDir) -iname *.dep
 # 3 - Compile Flags
 # 4 - Link/Package Flags
 moduleTypes=exec slib
-$(foreach v,$(moduleTypes),$(eval $v=$$(call module,$$1,$$0,$$2,$$3,$$4)))
+#$(foreach v,$(moduleTypes),$(eval $v=$$(call module,$$1,$$0,$$2,$$3,$$4)))
 
 
 
 # LOAD METADATA
 ###############
 
+# TODO: Disabled
 # Parse Config File
 # 1 - Config file path
-parseConfig=$(call debug,Parsing $1)$(call debug,)\
-            $(eval tempFile=$(shell mktemp))\
-            $(shell perl -pe '$(parserCode)' < $1 > $(tempFile))\
-            $(eval include $(tempFile))
-define parserCode
-s/(?<!\\)#.*\n/\n/g;
-s/(?<!;)\s*\n//g;
-s/;\s*\n/\n/g;
+# parseConfig=$(call debug,Parsing $1)$(call debug,)\
+	#             $(eval tempFile=$(shell mktemp))\
+	#             $(shell perl -pe '$(parserCode)' < $1 > $(tempFile))\
+	#             $(eval include $(tempFile))
+# define parserCode
+# s/(?<!\\)#.*\n/\n/g;
+# s/(?<!;)\s*\n//g;
+# s/;\s*\n/\n/g;
+# endef
+
+# Parse Sub Makefiles
+# 1 - makefile path
+define parseModule
+include $1
+moduleVars=moduleType moduleDeps moduleCompFlags moduleLinkFlags
+$(foreach v,$(moduleVars),$(if $($v),,$(error module $1 missing $v)))
+$(call module,$(dir $1),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags))
 endef
 
 
 $(call debug,Configuration)
 $(call debug,=============)
 
-$(foreach f,$(configFiles),$(call parseConfig,$f))
+# TODO: Disabled
+# $(foreach f,$(configFiles),$(call parseConfig,$f))
+moduleFiles=$(shell find . -iname makefile)
+$(foreach f,$(moduleFiles),$(call parseModule,$f))
 
 
 
