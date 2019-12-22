@@ -156,11 +156,6 @@ debug=$(if $(verbose),$(info $1))
 modulePath=$(patsubst %/,%,$(dir $1))
 
 
-# Check Path Exists
-# 1 - Module Path
-checkPathExists=$(if $(shell test -d $1 && echo true),,$(error $1 isn't a directory))
-
-
 # Check Path For 'At' Symbol ('@' isn't allowed in Maker paths)
 # 1 - Module Path
 checkPathForAt=$(if $(findstring @,$1),$(error $1 contains the @ symbol))
@@ -233,9 +228,7 @@ endef
 module=$(eval $(call moduleTempl,$(strip $1),$(strip $2),$(strip $3),$(strip $4),$(strip $5)))
 define moduleTempl
 $(call debug,Defining module for $1)
-$(call checkPathExists,$1)
 $(call checkPathForAt,$1)
-
 $(call debug,$(call formatMetadata,$1,$2,$3,$4,$5))
 $(call debug,)
 
