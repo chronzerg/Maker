@@ -165,6 +165,12 @@ debug=$(if $(verbose),$(info $1))
 # METADATA MACROS
 #################
 
+
+# Module Name
+# 1 - Module makefile path
+moduleName=$(patsubst %/,%,$(dir $1))
+
+
 # Check Path Exists
 # 1 - Input path
 checkPathExists=$(if $(shell test -d $1 && echo true),,$(error $1 isn't a directory))
@@ -296,7 +302,7 @@ $(call debug,=============)
 moduleFiles=$(shell find . -iname makefile -mindepth 1 | cut -c3-)
 $(foreach f,$(moduleFiles),\
  $(eval include $f)\
- $(call module,$(patsubst %/,%,$(dir $f)),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
+ $(call module,$(call moduleName,$f),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
 
 
 
