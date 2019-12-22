@@ -289,18 +289,14 @@ headerDepFiles=$(shell if [ -d $(buildDir) ]; then find $(buildDir) -iname *.dep
 # LOAD METADATA
 ###############
 
-# Parse Sub Makefiles
-# 1 - makefile path
-define parseModule
-$(call module,$(patsubst %/,%,$(dir $1)),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags))
-endef
-
 
 $(call debug,Configuration)
 $(call debug,=============)
 
 moduleFiles=$(shell find . -iname makefile -mindepth 1 | cut -c3-)
-$(foreach f,$(moduleFiles),$(eval include $f)$(call parseModule,$f))
+$(foreach f,$(moduleFiles),\
+ $(eval include $f)\
+ $(call module,$(patsubst %/,%,$(dir $f)),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
 
 
 
