@@ -173,7 +173,7 @@ rname=run@$1
 
 # Input Source Files
 # 1 - Module Path
-sources=$(shell find $1 -iname *.$(sourceExt))
+sources=$(shell find $1 -iname '*.$(sourceExt)')
 
 
 # Output Object Files
