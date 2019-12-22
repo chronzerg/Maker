@@ -142,12 +142,7 @@ endef
 # LOGGING MACROS
 ################
 
-# Log - Normal
-# 1 - Message
-log=$(info $1)
-
-
-# Log - Debug
+# Log Debug Message
 # 1 - Message
 debug=$(if $(verbose),$(info $1))
 
@@ -299,12 +294,12 @@ $(foreach f,$(moduleFiles),\
 all: $(targets)
 
 $(buildDir)/%.obj: %.cpp
-	$(call log,Compiling $<)
+	$(info,Compiling $<)
 	mkdir -p $(dir $@)
 	$(cxx) -c $(headerDepFlags) $(cxxFlags) $(cxxFlagsComp) $(cxxFlagsCompExtra) $< -o $@
 
 clean:
-	$(call log,Cleaning)
+	$(info,Cleaning)
 	$(rm) -rf $(buildDir)
 
 
