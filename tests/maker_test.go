@@ -31,33 +31,27 @@ func TestFramework(t *testing.T) {
 
 	mock := newMock(args.port, nil, nil)
 	fs := Files(mock.dir)
-	fs.file("config.mkr", `
-$(call slib, d1,
-	# Dependencies
-	,
-	# Compile Flags
-	,
-	# Linking Flags
-	--kill
-);
-$(call exec, d2,
-	# Dependencies
-	d1,
-	#Compile Flags
-	-x {0}+,
-	#Linking Flags
-	--hope --love
-);`)
 
 	fs.dir("d1").
 		file("f1.cpp", "#include\"f3.hpp\"").
 		file("f2.cpp", "#include\"f3.hpp\"").
 		file("f3.hpp", "").
-		file("f4.hpp", "")
+		file("f4.hpp", "").
+		file("makefile", `
+moduleType = exec
+moduleDeps = d2
+moduleCompFlags = -X{0} -wasted
+moduleLinkFlags = -redflag -nope
+`)
 
 	fs.dir("d2").
 		file("f1.cpp", "#include\"f2.hpp\"").
-		file("f2.hpp", "")
+		file("f2.hpp", "").
+		file("makefile", `
+moduleType = slib
+moduleCompFlags = -Y{1} -sober
+moduleLinkFlags = -greencard -yup
+`)
 
 	mock.Run(t)
 

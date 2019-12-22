@@ -303,36 +303,18 @@ moduleTypes=exec slib
 # LOAD METADATA
 ###############
 
-# TODO: Disabled
-# Parse Config File
-# 1 - Config file path
-# parseConfig=$(call debug,Parsing $1)$(call debug,)\
-	#             $(eval tempFile=$(shell mktemp))\
-	#             $(shell perl -pe '$(parserCode)' < $1 > $(tempFile))\
-	#             $(eval include $(tempFile))
-# define parserCode
-# s/(?<!\\)#.*\n/\n/g;
-# s/(?<!;)\s*\n//g;
-# s/;\s*\n/\n/g;
-# endef
-
 # Parse Sub Makefiles
 # 1 - makefile path
 define parseModule
-include $1
-moduleVars=moduleType moduleDeps moduleCompFlags moduleLinkFlags
-$(foreach v,$(moduleVars),$(if $($v),,$(error module $1 missing $v)))
-$(call module,$(dir $1),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags))
+$(call module,$(patsubst %/,%,$(dir $1)),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags))
 endef
 
 
 $(call debug,Configuration)
 $(call debug,=============)
 
-# TODO: Disabled
-# $(foreach f,$(configFiles),$(call parseConfig,$f))
-moduleFiles=$(shell find . -iname makefile)
-$(foreach f,$(moduleFiles),$(call parseModule,$f))
+moduleFiles=$(shell find . -iname makefile -mindepth 1 | cut -c3-)
+$(foreach f,$(moduleFiles),$(eval include $f)$(call parseModule,$f))
 
 
 
@@ -363,7 +345,7 @@ else
 $(call debug,Targets: $(targets))
 $(call debug,)
 
-$(foreach t,$(targets),$(eval $(call rules,$t)))
+$(foreach t,$(targets),$(call rules,$t))
 
 include $(headerDepFiles)
 

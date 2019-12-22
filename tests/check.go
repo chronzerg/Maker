@@ -29,10 +29,11 @@ func checkArgs(t *testing.T, name string, args []Invocation) {
 		}
 		log.Printf("expected: %v", inv)
 		if i >= len(args) {
-			t.Fatal("actual: no more")
+			t.Errorf("actual:")
+			continue
 		}
 		if inv != args[i] {
-			t.Fatalf("actual: %v", args[i])
+			t.Errorf("actual: %v", args[i])
 		}
 	}
 }
