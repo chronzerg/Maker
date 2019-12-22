@@ -240,6 +240,15 @@ targets+=$1
 endef
 
 
+# Parse Module Makefile
+# 1 - Module Makefile
+parseModule=$(eval $(call parseModuleTempl,$1))
+define parseModuleTempl
+$(eval include $f)
+$(call module,$(call modulePath,$f),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags))
+endef
+
+
 # Dependency Files
 # 1 - Dependency input paths
 depFiles=$(foreach v,$1,$(call file,$v,$($(v)Type)))
@@ -272,9 +281,7 @@ $(call debug,Configuration)
 $(call debug,=============)
 
 moduleFiles=$(shell find . -iname makefile -mindepth 1 | cut -c3-)
-$(foreach f,$(moduleFiles),\
- $(eval include $f)\
- $(call module,$(call modulePath,$f),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
+$(foreach f,$(moduleFiles),$(call parseModule,$f))
 
 
 
