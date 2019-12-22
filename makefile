@@ -271,13 +271,8 @@ depFiles=$(foreach v,$1,$(call file,$v,$($(v)Type)))
 # 1 - Input Path
 rules=$(eval $(call rulesTempl,$1,$($(1)Type),$($(1)Deps),$($(1)CFlags),$($(1)LFlags)))
 define rulesTempl
-# Define the file rule
 $(call $(call fileRuleName,$2),$(call file,$1,$2),$(call objects,$1) $(call depFiles,$3),$4,$5)
-
-# Define the alias rule
 $(call aliasRule,$1,$(call file,$1,$2))
-
-# Define the run rule (only for executables)
 $(if $(filter exec,$2),$(call runRule,$(call rname,$1),$(call file,$1,$2)))
 endef
 
