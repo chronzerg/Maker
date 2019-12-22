@@ -151,39 +151,38 @@ debug=$(if $(verbose),$(info $1))
 # METADATA MACROS
 #################
 
-
-# Module Name
-# 1 - Module makefile path
-moduleName=$(patsubst %/,%,$(dir $1))
+# Module Path
+# 1 - Module Makefile Path
+modulePath=$(patsubst %/,%,$(dir $1))
 
 
 # Check Path Exists
-# 1 - Input path
+# 1 - Module Path
 checkPathExists=$(if $(shell test -d $1 && echo true),,$(error $1 isn't a directory))
 
 
 # Check Path For 'At' Symbol ('@' isn't allowed in Maker paths)
-# 1 - Input path
+# 1 - Module Path
 checkPathForAt=$(if $(findstring @,$1),$(error $1 contains the @ symbol))
 
 
 # Runner Name
-# 1 - Input path
+# 1 - Module Path
 rname=run@$1
 
 
 # Input Source Files
-# 1 - Input path
+# 1 - Module Path
 sources=$(shell find $1 -iname *.$(sourceExt))
 
 
 # Output Object Files
-# 1 - Input path
+# 1 - Module Path
 objects=$(addprefix $(buildDir)/,$(patsubst %.cpp,%.obj,$(call sources,$1)))
 
 
 # Output File Path
-# 1 - Input path
+# 1 - Module Path
 # 2 - Type
 file=$(buildDir)/$1.$(call fileExt,$2)
 
@@ -282,7 +281,7 @@ $(call debug,=============)
 moduleFiles=$(shell find . -iname makefile -mindepth 1 | cut -c3-)
 $(foreach f,$(moduleFiles),\
  $(eval include $f)\
- $(call module,$(call moduleName,$f),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
+ $(call module,$(call modulePath,$f),$(moduleType),$(moduleDeps),$(moduleCompFlags),$(moduleLinkFlags)))
 
 
 
