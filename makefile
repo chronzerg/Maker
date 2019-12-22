@@ -286,20 +286,6 @@ headerDepFiles=$(shell if [ -d $(buildDir) ]; then find $(buildDir) -iname *.dep
 
 
 
-# PUBLIC MACROS
-###############
-
-# Declare Module
-# 0 - Type
-# 1 - Input path
-# 2 - Dependencies
-# 3 - Compile Flags
-# 4 - Link/Package Flags
-moduleTypes=exec slib
-#$(foreach v,$(moduleTypes),$(eval $v=$$(call module,$$1,$$0,$$2,$$3,$$4)))
-
-
-
 # LOAD METADATA
 ###############
 
