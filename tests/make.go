@@ -17,21 +17,18 @@ const makefile = "../makefile"
 
 var mocks = []string{"cxx", "ar"}
 
-type MakeMock struct {
-	command *exec.Cmd
-	Dir     string
-}
+type MakeCmd struct{ *exec.Cmd }
 
-func NewMock(argPort int, targets []string, opts map[string]string) *MakeMock {
+func NewMakeCmd(argPort int, targets []string, opts map[string]string) MakeCmd {
 	makefile, err := filepath.Abs(makefile)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get makefile path"))
+		panic(errors.Wrap(err, "failed to get absolute path of makefile"))
 	}
 	cmd := exec.Command("make", append([]string{"-f", makefile}, targets...)...)
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
-		panic(errors.Wrap(err, "failed to create temp dir"))
+		panic(errors.Wrap(err, "failed to create working dir"))
 	}
 	cmd.Dir = dir
 
@@ -39,6 +36,7 @@ func NewMock(argPort int, targets []string, opts map[string]string) *MakeMock {
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get CLI path"))
 	}
+
 	env := make([]string, len(mocks))
 	for i, mock := range mocks {
 		env[i] = fmt.Sprintf("%s=%s %d %s", mock, cliExec, argPort, mock)
@@ -48,73 +46,46 @@ func NewMock(argPort int, targets []string, opts map[string]string) *MakeMock {
 	}
 	cmd.Env = env
 
-	return &MakeMock{
-		command: cmd,
-		Dir:     dir,
-	}
+	return MakeCmd{cmd}
 }
 
-func (m *MakeMock) Run() {
-	log.Println(m.command)
+func (m *MakeCmd) Run() {
+	log.Println(m)
 
-	stdoutPipe, err := m.command.StdoutPipe()
+	stdoutPipe, err := m.StdoutPipe()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to open stdout pipe"))
 	}
 
-	stderrPipe, err := m.command.StderrPipe()
+	stderrPipe, err := m.StderrPipe()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to open stderr pipe"))
 	}
 
-	stdoutCh := make(chan string)
-	stderrCh := make(chan string)
+	outCh := make(chan string)
+	stdoutDone := make(chan struct{})
+	stderrDone := make(chan struct{})
+	go doRead(stdoutPipe, outCh, stdoutDone)
+	go doRead(stderrPipe, outCh, stderrDone)
+	go doLog(outCh)
 
-	go doRead(stdoutPipe, stdoutCh)
-	go doRead(stderrPipe, stderrCh)
-
-	loggingDone := make(chan struct{})
-	go func() {
-		defer close(loggingDone)
-		lgr := log.New(os.Stderr, "| ", 0)
-		for stdoutCh != nil || stderrCh != nil {
-			var line string
-			var open bool
-
-			select {
-			case line, open = <-stdoutCh:
-				if !open {
-					stdoutCh = nil
-					break
-				}
-			case line, open = <-stderrCh:
-				if !open {
-					stderrCh = nil
-					break
-				}
-			}
-
-			if len(line) > 0 {
-				lgr.Println(strings.ReplaceAll(line, "\n", ""))
-			}
-		}
-	}()
-
-	err = m.command.Start()
+	err = m.Start()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to run make"))
 	}
-	err = m.command.Wait()
-	<-loggingDone
+
+	err = m.Wait()
+	<-stdoutDone
+	<-stderrDone
+	close(outCh)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "make returned an error"))
 	}
 }
 
-func doRead(inReader io.Reader, outCh chan<- string) {
-	defer close(outCh)
+func doRead(inReader io.Reader, outCh chan<- string, done chan<- struct{}) {
+	defer close(done)
 	reader := bufio.NewReader(inReader)
-
 	for {
 		line, err := reader.ReadString('\n')
 		outCh <- line
@@ -123,6 +94,15 @@ func doRead(inReader io.Reader, outCh chan<- string) {
 				return
 			}
 			panic(errors.Wrap(err, "failed while reading"))
+		}
+	}
+}
+
+func doLog(outputCh <-chan string) {
+	lgr := log.New(os.Stderr, "| ", 0)
+	for line := range outputCh {
+		if len(line) > 0 {
+			lgr.Println(strings.ReplaceAll(line, "\n", ""))
 		}
 	}
 }

@@ -22,8 +22,8 @@ func TestFramework(save bool) {
 	args := tests.NewArgListener()
 	defer args.Close()
 
-	mock := tests.NewMock(args.Port, nil, nil)
-	fs := tests.Files(mock.Dir)
+	makeCmd := tests.NewMakeCmd(args.Port, nil, nil)
+	fs := tests.Files(makeCmd.Dir)
 
 	fs.Dir("d1").
 		File("f1.cpp", "#include\"f3.hpp\"").
@@ -42,6 +42,7 @@ moduleLinkFlags = -redflag -nope
 		File("f2.hpp", "").
 		File("makefile", `
 moduleType = slib
+moduleDeps =
 moduleCompFlags = -Y{1} -sober
 moduleLinkFlags = -greencard -yup
 `)
@@ -55,7 +56,7 @@ moduleCompFlags = -C{9} -tired
 moduleLinkFlags = -purpledrank -maybe
 `)
 
-	mock.Run()
+	makeCmd.Run()
 
 	if save {
 		tests.SaveArgs("test", args.Args)
