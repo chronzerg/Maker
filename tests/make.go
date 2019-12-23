@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"testing"
 )
 
 const makefile = "../makefile"
@@ -20,10 +19,10 @@ var mocks = []string{"cxx", "ar"}
 
 type MakeMock struct {
 	command *exec.Cmd
-	dir     string
+	Dir     string
 }
 
-func newMock(argPort int, targets []string, opts map[string]string) *MakeMock {
+func NewMock(argPort int, targets []string, opts map[string]string) *MakeMock {
 	makefile, err := filepath.Abs(makefile)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get makefile path"))
@@ -51,11 +50,11 @@ func newMock(argPort int, targets []string, opts map[string]string) *MakeMock {
 
 	return &MakeMock{
 		command: cmd,
-		dir:     dir,
+		Dir:     dir,
 	}
 }
 
-func (m *MakeMock) Run(t *testing.T) {
+func (m *MakeMock) Run() {
 	log.Println(m.command)
 
 	stdoutPipe, err := m.command.StdoutPipe()
@@ -108,7 +107,7 @@ func (m *MakeMock) Run(t *testing.T) {
 	err = m.command.Wait()
 	<-loggingDone
 	if err != nil {
-		t.Fatal(errors.Wrap(err, "make returned an error"))
+		log.Fatal(errors.Wrap(err, "make returned an error"))
 	}
 }
 

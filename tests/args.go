@@ -19,13 +19,13 @@ type ArgListener struct {
 	cancel context.CancelFunc
 
 	listener net.Listener
-	port     int
+	Port     int
 
 	argsCh chan Invocation
-	args   []Invocation
+	Args   []Invocation
 }
 
-func newArgListener() *ArgListener {
+func NewArgListener() *ArgListener {
 	const errMsg = "failed to construct ArgListener"
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -38,9 +38,9 @@ func newArgListener() *ArgListener {
 	a := &ArgListener{
 		cancel:   cancel,
 		listener: listener,
-		port:     listener.Addr().(*net.TCPAddr).Port,
+		Port:     listener.Addr().(*net.TCPAddr).Port,
 		argsCh:   make(chan Invocation),
-		args:     nil,
+		Args:     nil,
 	}
 
 	server := rpc.NewServer()
@@ -65,7 +65,7 @@ func newArgListener() *ArgListener {
 		for {
 			select {
 			case arg := <-a.argsCh:
-				a.args = append(a.args, arg)
+				a.Args = append(a.Args, arg)
 			case <-ctx.Done():
 				return
 			}
@@ -80,10 +80,9 @@ func (a *ArgListener) Put(args Invocation, _ *struct{}) error {
 	return nil
 }
 
-func (a *ArgListener) close() {
+func (a *ArgListener) Close() {
 	a.cancel()
-	err := a.listener.Close()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to close ArgListener"))
+	if err := a.listener.Close(); err != nil {
+		panic(err)
 	}
 }

@@ -8,7 +8,7 @@ import (
 
 type Files string
 
-func (b Files) dir(path string) Files {
+func (b Files) Dir(path string) Files {
 	modPath := filepath.Join(string(b), path)
 	err := os.MkdirAll(modPath, os.ModePerm)
 	if err != nil {
@@ -17,7 +17,7 @@ func (b Files) dir(path string) Files {
 	return Files(modPath)
 }
 
-func (b Files) file(name string, contents string) Files {
+func (b Files) File(name string, contents string) Files {
 	srcPath := filepath.Join(string(b), name)
 	err := ioutil.WriteFile(srcPath, []byte(contents), 0644)
 	if err != nil {

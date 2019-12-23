@@ -32,22 +32,22 @@ func TestFramework(t *testing.T) {
 	mock := newMock(args.port, nil, nil)
 	fs := Files(mock.dir)
 
-	fs.dir("d1").
-		file("f1.cpp", "#include\"f3.hpp\"").
-		file("f2.cpp", "#include\"f3.hpp\"").
-		file("f3.hpp", "").
-		file("f4.hpp", "").
-		file("makefile", `
+	fs.Dir("d1").
+		File("f1.cpp", "#include\"f3.hpp\"").
+		File("f2.cpp", "#include\"f3.hpp\"").
+		File("f3.hpp", "").
+		File("f4.hpp", "").
+		File("makefile", `
 moduleType = exec
 moduleDeps = d2
 moduleCompFlags = -X{0} -wasted
 moduleLinkFlags = -redflag -nope
 `)
 
-	fs.dir("d2").
-		file("f1.cpp", "#include\"f2.hpp\"").
-		file("f2.hpp", "").
-		file("makefile", `
+	fs.Dir("d2").
+		File("f1.cpp", "#include\"f2.hpp\"").
+		File("f2.hpp", "").
+		File("makefile", `
 moduleType = slib
 moduleCompFlags = -Y{1} -sober
 moduleLinkFlags = -greencard -yup
