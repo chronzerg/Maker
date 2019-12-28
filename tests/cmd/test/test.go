@@ -26,35 +26,35 @@ func TestFramework(save bool) {
 	fs := tests.Files(makeCmd.Dir)
 
 	fs.Dir("d1").
+		Module(tests.ModSpec{
+			Type:      "exec",
+			Deps:      "d2",
+			CompFlags: "-X{0} -wasted",
+			LinkFlags: "-redflag -nope",
+		}).
 		File("f1.cpp", "#include\"f3.hpp\"").
 		File("f2.cpp", "#include\"f3.hpp\"").
 		File("f3.hpp", "").
-		File("f4.hpp", "").
-		File("makefile", `
-moduleType = exec
-moduleDeps = d2
-moduleCompFlags = -X{0} -wasted
-moduleLinkFlags = -redflag -nope
-`)
+		File("f4.hpp", "")
 
 	fs.Dir("d2").
+		Module(tests.ModSpec{
+			Type:      "slib",
+			Deps:      "",
+			CompFlags: "-Y{1} -sober",
+			LinkFlags: "-greencard -yup",
+		}).
 		File("f1.cpp", "#include\"f2.hpp\"").
-		File("f2.hpp", "").
-		File("makefile", `
-moduleType = slib
-moduleDeps =
-moduleCompFlags = -Y{1} -sober
-moduleLinkFlags = -greencard -yup
-`)
+		File("f2.hpp", "")
 
 	fs.Dir("d3").
-		File("f1.cpp", "").
-		File("makefile", `
-moduleType = exec
-moduleDeps = d2
-moduleCompFlags = -C{9} -tired
-moduleLinkFlags = -purpledrank -maybe
-`)
+		Module(tests.ModSpec{
+			Type:      "exec",
+			Deps:      "d2",
+			CompFlags: "-C{9} -tired",
+			LinkFlags: "-purpledrank -maybe",
+		}).
+		File("f1.cpp", "")
 
 	makeCmd.Run()
 
